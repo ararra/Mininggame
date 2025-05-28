@@ -1,5 +1,6 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
+#include <SDL3_image/SDL_image.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -10,7 +11,9 @@ typedef struct Game
 {
     SDL_Window *window;
     SDL_Renderer *renderer;
-
+    SDL_Texture *background;
+    SDL_Texture *basic_tile;
+    SDL_FRect tile_position;
 
 }Game;
 
@@ -25,7 +28,7 @@ typedef struct Weapon
 
 typedef struct Character
 {
-    SDL_Rect position;
+    SDL_FRect position;
     SDL_Texture* texture;
 
     int max_health;
@@ -65,3 +68,4 @@ Char g_char;
 
 
 void initialize_game();
+SDL_Texture* loadTexture(const char* path, SDL_Renderer* renderer);

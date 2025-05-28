@@ -48,12 +48,7 @@ typedef struct Character
 
     Weapon gun;
 
-
-
 }Char;
-
-
-
 
 typedef struct Enemies
 {

@@ -31,19 +31,20 @@ int main(int argc, char* argv[]) {
         bool collision = false;
         for(int i = 0; i < AMOUNTOFTILESX*AMOUNTOFTILESY; i++)
         {
-            printf("%d",i);
             if (tile_colision(&g_char.position, &g_game.tile_position_array[i]))
             {
+                printf("coll");
                 collision = true;
             }
         }
         
         
-        if (keys[SDL_SCANCODE_W]){ g_char.position.y -= delta*g_char.speed; }
-        if (keys[SDL_SCANCODE_S]){ g_char.position.y += delta*g_char.speed; }
-        if (keys[SDL_SCANCODE_A]){ g_char.position.x -= delta*g_char.speed; }
-        if (keys[SDL_SCANCODE_D]){ g_char.position.x += delta*g_char.speed; }
-        
+        if (keys[SDL_SCANCODE_W] & !collision){ g_char.position.y -= delta*g_char.speed; }
+        if (keys[SDL_SCANCODE_S] & !collision){ g_char.position.y += delta*g_char.speed; }
+        if (keys[SDL_SCANCODE_A] & !collision){ g_char.position.x -= delta*g_char.speed; }
+        if (keys[SDL_SCANCODE_D] & !collision){ g_char.position.x += delta*g_char.speed; }
+        //pushes char back if collision.
+        if (collision){g_char.position.y -= delta*g_char.speed;}
        
 
         // TODO:check collision detection and and remove tile on "presure collision"
@@ -171,6 +172,6 @@ void fill_tiles_array()
 
 bool tile_colision(SDL_FRect *rect_1, SDL_FRect *rect_2)
 {
-    SDL_FRect *result;
-    return SDL_GetRectIntersectionFloat(rect_1, rect_2, result);
+    SDL_FRect result;
+    return SDL_GetRectIntersectionFloat(rect_1, rect_2, &result);
 }

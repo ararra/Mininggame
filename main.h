@@ -6,6 +6,8 @@
 #include <stdlib.h>
 
 
+# define AMOUNTOFTILESX 25
+# define AMOUNTOFTILESY 10
 ///Defining structs
 typedef struct Game
 {
@@ -14,6 +16,7 @@ typedef struct Game
     SDL_Texture *background;
     SDL_Texture *basic_tile;
     SDL_FRect tile_position;
+    SDL_FRect tile_position_array[AMOUNTOFTILESY*AMOUNTOFTILESX];
 
 }Game;
 
@@ -69,3 +72,11 @@ Char g_char;
 
 void initialize_game();
 SDL_Texture* loadTexture(const char* path, SDL_Renderer* renderer);
+
+
+void render_tiles();
+
+
+void fill_tiles_array();
+
+bool tile_colision(SDL_FRect *rect_1, SDL_FRect *rect_2);

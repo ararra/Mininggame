@@ -27,12 +27,12 @@ int main(int argc, char* argv[]) {
         delta = (now-last)/1000.0f;
 
         const bool *keys = SDL_GetKeyboardState(NULL);
-        
+        SDL_FRect result;
 
         // TODO: Generalize downward collision into all directions
         for(int i = 0; i < AMOUNTOFTILESX*AMOUNTOFTILESY; i++)
         {
-            if (tile_colision(&g_char.position, &g_game.tile_position_array[i]) & !collision)
+            if (SDL_GetRectIntersectionFloat(&g_char.position, &g_game.tile_position_array[i], &result) & !collision)
             {
                 SDL_Log("coll ");
                 collision = true;
@@ -55,13 +55,28 @@ int main(int argc, char* argv[]) {
         //pushes char back if collision and the button has been let go.
         //TODO: Make bounceback feature initial velocity based on "pressure" (time under button press) with exponential speed loss. 
         //Needs to be done between frames right so a function with static variable right?
-        if (collision & !keys[SDL_SCANCODE_S])
+        //this is why the side collision jump is happening
+        //dont know if i should implement drilling upwards or leave it as it is
+        // if (collision & (!keys[SDL_SCANCODE_S] | (!keys[SDL_SCANCODE_S] & (!keys[SDL_SCANCODE_A] | !keys[SDL_SCANCODE_D]) ))  )
+        // {   
+        //     //the constant needs to be there otherwise the colision persists for a few frames and it activates the tile collision if check above several times.
+        //     // use the result rect from the collision to create a direction for the bounce back.
+        //     g_char.position.y -= 5+delta*g_char.speed;
+        //     collision = false;
+        // }         
+        if (collision && (!(keys[SDL_SCANCODE_S] || (keys[SDL_SCANCODE_A] ^ keys[SDL_SCANCODE_D])))  )
         {   
             //the constant needs to be there otherwise the colision persists for a few frames and it activates the tile collision if check above several times.
+            // use the result rect from the collision to create a direction for the bounce back.
             g_char.position.y -= 5+delta*g_char.speed;
             collision = false;
         } 
-
+        // if (collision & (keys[SDL_SCANCODE_S] ^ keys[SDL_SCANCODE_W] ^ keys[SDL_SCANCODE_A] ^ keys[SDL_SCANCODE_D])  )
+        // {   
+        //     //the constant needs to be there otherwise the colision persists for a few frames and it activates the tile collision if check above several times.
+        //     g_char.position.x -= 5+delta*g_char.speed;
+        //     collision = false;
+        // } 
        
 
         // remove tile on "presure collision" !!!!consider the order of these if checks might be important. Do I put in functions?

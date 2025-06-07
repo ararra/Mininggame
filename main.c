@@ -12,8 +12,9 @@ int main(int argc, char* argv[]) {
     Uint64 now = SDL_GetTicks();
     Uint64 last = now;
     float delta;
-
-
+    Uint64 collision_start;
+    bool collision = false;
+    int tile_col_index;
 
     while (running) {
         while (SDL_PollEvent(&event)) {
@@ -28,27 +29,48 @@ int main(int argc, char* argv[]) {
         const bool *keys = SDL_GetKeyboardState(NULL);
         
 
-        bool collision = false;
+        // TODO: Generalize downward collision into all directions
         for(int i = 0; i < AMOUNTOFTILESX*AMOUNTOFTILESY; i++)
         {
-            if (tile_colision(&g_char.position, &g_game.tile_position_array[i]))
+            if (tile_colision(&g_char.position, &g_game.tile_position_array[i]) & !collision)
             {
-                printf("coll");
+                SDL_Log("coll ");
                 collision = true;
+                collision_start = now;
+                tile_col_index = i;
+                
             }
         }
         
-        
+        // TODO: add slowdown to movement when letting go of button
         if (keys[SDL_SCANCODE_W] & !collision){ g_char.position.y -= delta*g_char.speed; }
         if (keys[SDL_SCANCODE_S] & !collision){ g_char.position.y += delta*g_char.speed; }
         if (keys[SDL_SCANCODE_A] & !collision){ g_char.position.x -= delta*g_char.speed; }
         if (keys[SDL_SCANCODE_D] & !collision){ g_char.position.x += delta*g_char.speed; }
-        //pushes char back if collision.
-        if (collision){g_char.position.y -= delta*g_char.speed;}
+
+        // issues with current collisions:
+        // 1) teleports drill to the top when side collision
+        // 2) 
+
+        //pushes char back if collision and the button has been let go.
+        //TODO: Make bounceback feature initial velocity based on "pressure" (time under button press) with exponential speed loss. 
+        //Needs to be done between frames right so a function with static variable right?
+        if (collision & !keys[SDL_SCANCODE_S])
+        {   
+            //the constant needs to be there otherwise the colision persists for a few frames and it activates the tile collision if check above several times.
+            g_char.position.y -= 5+delta*g_char.speed;
+            collision = false;
+        } 
+
        
 
-        // TODO:check collision detection and and remove tile on "presure collision"
-        if (true){;}
+        // remove tile on "presure collision" !!!!consider the order of these if checks might be important. Do I put in functions?
+        if (now - collision_start >= 500 & collision)
+        {
+            SDL_FRect temp = {.x = 0, .y = 0, .w =0, .h = 0}; //hide in upper left corner
+            g_game.tile_position_array[tile_col_index] = temp;
+            collision = false;
+        }
 
 
         //TODO: create full tile set with ores randomly spread out.
@@ -81,7 +103,6 @@ int main(int argc, char* argv[]) {
 
     return 0;
 }
-
 
 void initialize_game()
 {

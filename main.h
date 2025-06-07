@@ -1,3 +1,5 @@
+#pragma once
+
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
 #include <SDL3_image/SDL_image.h>
@@ -16,6 +18,7 @@ typedef struct Game
     SDL_Texture *background;
     SDL_Texture *basic_tile;
     SDL_FRect tile_position;
+    //this array needs to be a linked list, maybe not needed since I dont need to remove it just set it to 0.
     SDL_FRect tile_position_array[AMOUNTOFTILESY*AMOUNTOFTILESX];
 
 }Game;

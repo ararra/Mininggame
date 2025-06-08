@@ -28,12 +28,15 @@ int main(int argc, char* argv[]) {
 
         const bool *keys = SDL_GetKeyboardState(NULL);
         SDL_FRect result;
-
+        SDL_FRect saved_result[3];
+        int k = 0;
         // TODO: Generalize downward collision into all directions
         for(int i = 0; i < AMOUNTOFTILESX*AMOUNTOFTILESY; i++)
         {
             if (SDL_GetRectIntersectionFloat(&g_char.position, &g_game.tile_position_array[i], &result) & !collision)
             {
+                saved_result[k] =  result;
+                k += 1;
                 SDL_Log("coll ");
                 collision = true;
                 collision_start = now;
@@ -67,17 +70,37 @@ int main(int argc, char* argv[]) {
         if (collision && (!(keys[SDL_SCANCODE_S] || (keys[SDL_SCANCODE_A] ^ keys[SDL_SCANCODE_D])))  )
         {   
             //the constant needs to be there otherwise the colision persists for a few frames and it activates the tile collision if check above several times.
-            // use the result rect from the collision to create a direction for the bounce back.
-            g_char.position.y -= 5+delta*g_char.speed;
+            // use the saved_result rect from the collision to create a direction for the bounce back.
+
+            // this method not quite working
+            float saved_result_x_sum = saved_result[0].x +saved_result[1].x +saved_result[2].x;
+            float saved_result_y_sum = saved_result[0].y +saved_result[1].y +saved_result[2].y;
+            int power_y = (saved_result_x_sum > g_char.position.y);
+            int power_x = (saved_result_y_sum > g_char.position.x); 
+            g_char.position.y =g_char.position.y + pow(-1,power_y)*(5+saved_result[0].h);
+            g_char.position.x =g_char.position.x + pow(-1,power_x)*(5+saved_result[0].w);
+            SDL_Log("px: %d po: %d w: %f",power_x, pow(-1,power_x), saved_result[0].h);
+
+
+
+            //ChatGPT Method Also not working
+            // int dy = saved_result.y - g_char.position.y;
+            // int dx = saved_result.x - g_char.position.x;
+            // if (dy != 0) {
+            //     g_char.position.y += (dy > 0 ? 1 : -1) * (5 + saved_result.h);
+            // }
+            // if (dx != 0) {
+            //     g_char.position.x += (dx > 0 ? 1 : -1) * (5 + saved_result.w);
+            // }
+            // SDL_Log("dx: %d, dy: %d, result.h: %f, result.w: %f", dx, dy, saved_result.h, saved_result.w);
+
+            // Vector method
+
+
+
             collision = false;
         } 
-        // if (collision & (keys[SDL_SCANCODE_S] ^ keys[SDL_SCANCODE_W] ^ keys[SDL_SCANCODE_A] ^ keys[SDL_SCANCODE_D])  )
-        // {   
-        //     //the constant needs to be there otherwise the colision persists for a few frames and it activates the tile collision if check above several times.
-        //     g_char.position.x -= 5+delta*g_char.speed;
-        //     collision = false;
-        // } 
-       
+
 
         // remove tile on "presure collision" !!!!consider the order of these if checks might be important. Do I put in functions?
         if (now - collision_start >= 500 & collision)
@@ -189,19 +212,27 @@ void render_tiles()
 
 void fill_tiles_array()
 {
-    float setprob = 0.5;
+    int randomnumber;
+    randomnumber = rand() % 2;
     for(int i = 0; i< AMOUNTOFTILESX; i++)
     {
 
         for(int j = 0; j < AMOUNTOFTILESY; j++)
         {
-            
-            int k = i+j*AMOUNTOFTILESX;
-            g_game.tile_position_array[k].y = 640-j*32-32;
-            g_game.tile_position_array[k].x = i*32;
-            g_game.tile_position_array[k].h = 32;
-            g_game.tile_position_array[k].w = 32;
-
+            //modulo x makes it remove around 1 in x random tiles.
+            bool fill_tile_true = rand() % 5;
+            if(fill_tile_true)
+            {
+                int k = i+j*AMOUNTOFTILESX;
+                g_game.tile_position_array[k].y = 640-j*32-32;
+                g_game.tile_position_array[k].x = i*32;
+                g_game.tile_position_array[k].h = 32;
+                g_game.tile_position_array[k].w = 32;
+            }
+            else
+            {
+                //print ore tile
+            }
         }
     } 
 }

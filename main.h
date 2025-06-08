@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
-
+#include <math.h>
 
 # define AMOUNTOFTILESX 25
 # define AMOUNTOFTILESY 10

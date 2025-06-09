@@ -127,7 +127,7 @@ int main(int argc, char* argv[]) {
 
         for(int i = 0; i< AMOUNTOFTILESY*AMOUNTOFTILESX; i++)
         {
-            SDL_RenderTexture(g_game.renderer, g_game.basic_tile,NULL, &g_game.tile_position_array[i]);
+            SDL_RenderTexture(g_game.renderer, g_game.tile_texture_array[i], NULL, &g_game.tile_position_array[i]);
         }
 
 
@@ -168,7 +168,8 @@ void initialize_game()
     g_game.background =  loadTexture("assets/Background.png", g_game.renderer);
     g_char.texture = loadTexture("assets/ship.png", g_game.renderer);
     g_game.basic_tile = loadTexture("assets/Dirt.png", g_game.renderer);
-    
+    g_game.gold_tile = loadTexture("assets/goldt.png", g_game.renderer);
+
     SDL_FRect temp = {.w = 32, .h = 32, .x =392, .y = 400};
     g_game.tile_position = temp;
 
@@ -220,18 +221,20 @@ void fill_tiles_array()
         for(int j = 0; j < AMOUNTOFTILESY; j++)
         {
             //modulo x makes it remove around 1 in x random tiles.
-            bool fill_tile_true = rand() % 5;
-            if(fill_tile_true)
+            bool fill_tile_basic = rand() % 5;
+            int k = i+j*AMOUNTOFTILESX;
+            g_game.tile_position_array[k].y = 640-j*32-32;
+            g_game.tile_position_array[k].x = i*32;
+            g_game.tile_position_array[k].h = 32;
+            g_game.tile_position_array[k].w = 32;
+            
+            if(fill_tile_basic)
             {
-                int k = i+j*AMOUNTOFTILESX;
-                g_game.tile_position_array[k].y = 640-j*32-32;
-                g_game.tile_position_array[k].x = i*32;
-                g_game.tile_position_array[k].h = 32;
-                g_game.tile_position_array[k].w = 32;
+                g_game.tile_texture_array[k] = g_game.basic_tile;    
             }
             else
             {
-                //print ore tile
+                g_game.tile_texture_array[k] = g_game.gold_tile;
             }
         }
     } 

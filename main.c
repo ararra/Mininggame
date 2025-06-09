@@ -229,15 +229,15 @@ void fill_tiles_array()
             g_game.tile_position_array[k].h = 32;
             g_game.tile_position_array[k].w = 32;
             
-            if(fill_tile_basic % 6 <= 2)
+            if(fill_tile_basic % 20 <= 15)
             {
                 g_game.tile_texture_array[k] = g_game.basic_tile;    
             }
-            else if (fill_tile_basic % 6 <= 4)
+            else if (fill_tile_basic % 20 <= 18 && fill_tile_basic % 20 >= 16)
             {
                 g_game.tile_texture_array[k] = g_game.gold_tile;
             }
-            else if (fill_tile_basic % 6 == 5)
+            else if (fill_tile_basic % 20 == 19)
             {
                 g_game.tile_texture_array[k] = g_game.redonium_tile;
             }

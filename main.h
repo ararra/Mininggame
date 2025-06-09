@@ -18,6 +18,7 @@ typedef struct Game
     SDL_Texture *background;
     SDL_Texture *basic_tile;
     SDL_Texture *gold_tile;
+    SDL_Texture *redonium_tile;
     SDL_FRect tile_position;
     //this array needs to be a linked list, maybe not needed since I dont need to remove it just set it to 0.
     SDL_FRect tile_position_array[AMOUNTOFTILESY*AMOUNTOFTILESX];

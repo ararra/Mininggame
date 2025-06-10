@@ -19,6 +19,10 @@ typedef struct Game
     SDL_Texture *basic_tile;
     SDL_Texture *gold_tile;
     SDL_Texture *redonium_tile;
+    SDL_Texture *healthbar_empty;
+    SDL_Texture *healthbar_filled;
+    
+
     SDL_FRect tile_position;
     //this array needs to be a linked list, maybe not needed since I dont need to remove it just set it to 0.
     SDL_FRect tile_position_array[AMOUNTOFTILESY*AMOUNTOFTILESX];
@@ -42,7 +46,8 @@ typedef struct Character
 
     int max_health;
     int health;
-    
+    int health_percentage;
+
     int armor;
 
     int speed;

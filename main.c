@@ -27,6 +27,7 @@ int main(int argc, char* argv[]) {
         delta = (now-last)/1000.0f;
 
         const bool *keys = SDL_GetKeyboardState(NULL);
+        
         SDL_FRect temp_collision_result;
         SDL_FRect collision_result_array[4];
         int k = 0;
@@ -55,26 +56,11 @@ int main(int argc, char* argv[]) {
         if (keys[SDL_SCANCODE_A] & !collision){ g_char.position.x -= delta*g_char.speed; }
         if (keys[SDL_SCANCODE_D] & !collision){ g_char.position.x += delta*g_char.speed; }
 
-
-        //TODO: Make bounceback feature initial velocity based on "pressure" (time under button press) with exponential speed loss. 
+        // TODO: Move collision into separate function.
+        // TODO: Make bounceback feature initial velocity based on "pressure" (time under button press) with exponential speed loss. 
         //Needs to be done between frames right so a function with static variable right?
-
-
         if (collision && (!(keys[SDL_SCANCODE_S] || (keys[SDL_SCANCODE_A] ^ keys[SDL_SCANCODE_D])))  )
-        {   
-            //the constant needs to be there otherwise the colision persists for a few frames and it activates the tile collision if check above several times.
-            // use the saved_result rect from the collision to create a direction for the bounce back.
-
-            // this method not quite working
-            // float saved_result_x_sum = saved_result[0].x +saved_result[1].x +saved_result[2].x;
-            // float saved_result_y_sum = saved_result[0].y +saved_result[1].y +saved_result[2].y;
-            // int power_y = (saved_result[0].y > g_char.position.y);
-            //int power_x = (saved_result[0].x > g_char.position.x); 
-            // g_char.position.y =g_char.position.y + pow(-1,power_y)*(5+saved_result[0].h);
-            //g_char.position.x =g_char.position.x + pow(-1,power_x)*(5+saved_result[0].w);
-            //SDL_Log("px: %d po: %d w: %f",power_x, pow(-1,power_x), saved_result[0].h);
-
-
+        {  
             // vector method
             // vector from center of char to center of colision
             int char_middle_x = g_char.position.x + g_char.position.w/2;
@@ -111,8 +97,7 @@ int main(int argc, char* argv[]) {
             collision = false;
 
         } 
-
-
+        // TODO:  remove tile with mot overlap and center character into the drilled tile smoothly.
         // remove tile on "presure collision" !!!!consider the order of these if checks might be important. Do I put in functions?
         if (now - collision_start >= 500 & collision)
         {
@@ -121,17 +106,12 @@ int main(int argc, char* argv[]) {
             collision = false;
         }
 
-
-        //TODO: create full tile set with ores randomly spread out.
-        //render_tiles();
-
-
         SDL_RenderClear(g_game.renderer);
-
-
 
         // Draw something here...
         SDL_RenderTexture(g_game.renderer, g_game.background,NULL, NULL);
+        SDL_RenderTexture(g_game.renderer, g_char.texture,NULL, &g_char.position);
+
         
         //SDL_RenderTexture(g_game.renderer, g_game.basic_tile,NULL, &g_game.tile_position);
 
@@ -140,7 +120,13 @@ int main(int argc, char* argv[]) {
             SDL_RenderTexture(g_game.renderer, g_game.tile_texture_array[i], NULL, &g_game.tile_position_array[i]);
         }
 
-        SDL_RenderTexture(g_game.renderer, g_char.texture,NULL, &g_char.position);
+        SDL_FRect healthbar_pos = {.x = 20, .y = 20 ,.w = 100, .h = 20};
+        SDL_FRect healthbar_left = {.x = 0, .y = 0 ,.w = g_char.health_percentage, .h = 20};
+        SDL_FRect healthbar_left_pos = {.x = 20, .y = 20 ,.w = g_char.health_percentage, .h = 20};
+
+        SDL_RenderTexture(g_game.renderer, g_game.healthbar_empty, NULL, &healthbar_pos);
+        SDL_RenderTexture(g_game.renderer, g_game.healthbar_filled, &healthbar_left, &healthbar_left_pos);
+
 
 
         SDL_RenderPresent(g_game.renderer);
@@ -181,6 +167,8 @@ void initialize_game()
     g_game.basic_tile = loadTexture("assets/Dirt.png", g_game.renderer);
     g_game.gold_tile = loadTexture("assets/goldt.png", g_game.renderer);
     g_game.redonium_tile = loadTexture("assets/Redonium.png", g_game.renderer);
+    g_game.healthbar_empty = loadTexture("assets/Healthbar.png", g_game.renderer);
+    g_game.healthbar_filled = loadTexture("assets/Healthbar_filled.png", g_game.renderer);
 
     SDL_FRect temp = {.w = 32, .h = 32, .x =392, .y = 400};
     g_game.tile_position = temp;
@@ -190,7 +178,11 @@ void initialize_game()
     SDL_FRect temp2 = {.w = 32, .h = 32, .x =392, .y = 200};
     g_char.position = temp2;
     g_char.speed = 200.0f;
+    g_char.max_health = 100;
+    g_char.health = 50;
+    g_char.health_percentage = g_char.max_health / 100*g_char.health;
 
+    
 
     fill_tiles_array();
 

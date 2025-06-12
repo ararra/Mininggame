@@ -14,7 +14,7 @@ int main(int argc, char* argv[]) {
     float delta;
     Uint64 collision_start;
     bool collision = false;
-    int tile_col_index;
+    int tile_col_index[4];
 
     while (running) {
         while (SDL_PollEvent(&event)) {
@@ -36,8 +36,7 @@ int main(int argc, char* argv[]) {
             if (SDL_GetRectIntersectionFloat(&g_char.position, &g_game.tile_position_array[i], &temp_collision_result))
             {
                 collision_result_array[k] = temp_collision_result;
-                k += 1;
-                SDL_Log("coll %d ", k);
+                // SDL_Log("coll %d ", k);
 
                 if(!collision)
                 {
@@ -45,8 +44,19 @@ int main(int argc, char* argv[]) {
                 }
                 
                 collision = true;
-                tile_col_index = i;
+                tile_col_index[k] = i;
+                k += 1;
+
             }
+        }
+
+        if(SDL_GetRectIntersectionFloat(&g_char.position, &g_game.store_position, &temp_collision_result))
+        {
+            for(int i = 0; i < 8; i++)
+            {
+                g_char.ores[i] = 0;
+            }
+            SDL_Log("Ores sold");
         }
         
         
@@ -59,12 +69,13 @@ int main(int argc, char* argv[]) {
         // TODO: Move collision into separate function.
         // TODO: Make bounceback feature initial velocity based on "pressure" (time under button press) with exponential speed loss. 
         //Needs to be done between frames right so a function with static variable right?
+
+        int char_middle_x = g_char.position.x + g_char.position.w/2;
+        int char_middle_y = g_char.position.y + g_char.position.h/2; 
         if (collision && (!(keys[SDL_SCANCODE_S] || (keys[SDL_SCANCODE_A] ^ keys[SDL_SCANCODE_D])))  )
         {  
             // vector method
             // vector from center of char to center of colision
-            int char_middle_x = g_char.position.x + g_char.position.w/2;
-            int char_middle_y = g_char.position.y + g_char.position.h/2; 
             int coll_middle_x = 0;
             int coll_middle_y = 0;
 
@@ -84,7 +95,7 @@ int main(int argc, char* argv[]) {
                 int v_x = char_middle_x - coll_middle_x;
                 int v_y = char_middle_y - coll_middle_y;
                 
-                SDL_Log("%d", v_x );
+                // SDL_Log("v_x position %d", v_x );
                 // Apply push-back (with safety checks)
                 if (v_x != 0) {
                     g_char.position.x += (v_x > 0) ? 2 : -2;
@@ -97,39 +108,54 @@ int main(int argc, char* argv[]) {
             collision = false;
 
         } 
-        // TODO:  remove tile with mot overlap and center character into the drilled tile smoothly.
+        // TODO:  remove tile with most overlap and center character into the drilled tile smoothly.
         // remove tile on "presure collision" !!!!consider the order of these if checks might be important. Do I put in functions?
         if (now - collision_start >= 500 & collision)
-        {
-            SDL_FRect temp = {.x = 0, .y = 0, .w =0, .h = 0}; //hide in upper left corner
-            g_game.tile_position_array[tile_col_index] = temp;
+        {   
+            // Attempt at removing the closest collision.
+            // int min_ind = 0;
+            // int min = abs((char_middle_x - collision_result_array[0].x + collision_result_array[0].w/2)+ (char_middle_x - collision_result_array[0].x + collision_result_array[0].w/2));
+            // for(int i = 1; i<k; i++)
+            // {
+            //     int temp_x = abs(char_middle_x - collision_result_array[i].x + collision_result_array[i].w/2);
+            //     int temp_y = abs(char_middle_x - collision_result_array[i].x + collision_result_array[i].w/2);
+            //     if(abs(temp_x + temp_y) < min)
+            //     {
+            //         min = abs(temp_x + temp_y);
+            //         min_ind = tile_col_index[i];
+            //     }
+            // }
+
+
+            SDL_FRect temp = {.x = -100, .y = -100, .w =0, .h = 0}; //hide offscreen
+            g_game.tile_position_array[tile_col_index[0]] = temp;
             collision = false;
+
+            int total_ores = 0;
+            for(int i = 0; i < 8; i++)
+            {
+                total_ores += g_char.ores[i];
+            }
+            if(total_ores < g_char.bag_capacity)
+            {
+                if(g_game.tile_texture_array[tile_col_index[0]] == g_game.redonium_tile )
+                {
+                    g_char.ores[0] += 1;
+                    SDL_Log("Redtile +1");
+                }
+                if(g_game.tile_texture_array[tile_col_index[0]] == g_game.gold_tile)
+                {
+                    g_char.ores[1] += 1;
+                    SDL_Log("gold tile +1");
+                }
+            }else if(g_game.tile_texture_array[tile_col_index[0]] != g_game.basic_tile)
+            {
+                SDL_Log("Bag is full, Item deleted!");
+            }
+            
         }
 
-        SDL_RenderClear(g_game.renderer);
-
-        // Draw something here...
-        SDL_RenderTexture(g_game.renderer, g_game.background,NULL, NULL);
-        SDL_RenderTexture(g_game.renderer, g_char.texture,NULL, &g_char.position);
-
-        
-        //SDL_RenderTexture(g_game.renderer, g_game.basic_tile,NULL, &g_game.tile_position);
-
-        for(int i = 0; i< AMOUNTOFTILESY*AMOUNTOFTILESX; i++)
-        {
-            SDL_RenderTexture(g_game.renderer, g_game.tile_texture_array[i], NULL, &g_game.tile_position_array[i]);
-        }
-
-        SDL_FRect healthbar_pos = {.x = 20, .y = 20 ,.w = 100, .h = 20};
-        SDL_FRect healthbar_left = {.x = 0, .y = 0 ,.w = g_char.health_percentage, .h = 20};
-        SDL_FRect healthbar_left_pos = {.x = 20, .y = 20 ,.w = g_char.health_percentage, .h = 20};
-
-        SDL_RenderTexture(g_game.renderer, g_game.healthbar_empty, NULL, &healthbar_pos);
-        SDL_RenderTexture(g_game.renderer, g_game.healthbar_filled, &healthbar_left, &healthbar_left_pos);
-
-
-
-        SDL_RenderPresent(g_game.renderer);
+        rendering_screen();
     }
 
     SDL_DestroyRenderer(g_game.renderer);
@@ -160,33 +186,15 @@ void initialize_game()
         SDL_Quit();
         exit(EXIT_FAILURE);
     }
-    
-    //Loading in assets
-    g_game.background =  loadTexture("assets/Background.png", g_game.renderer);
-    g_char.texture = loadTexture("assets/ship.png", g_game.renderer);
-    g_game.basic_tile = loadTexture("assets/Dirt.png", g_game.renderer);
-    g_game.gold_tile = loadTexture("assets/goldt.png", g_game.renderer);
-    g_game.redonium_tile = loadTexture("assets/Redonium.png", g_game.renderer);
-    g_game.healthbar_empty = loadTexture("assets/Healthbar.png", g_game.renderer);
-    g_game.healthbar_filled = loadTexture("assets/Healthbar_filled.png", g_game.renderer);
 
-    SDL_FRect temp = {.w = 32, .h = 32, .x =392, .y = 400};
-    g_game.tile_position = temp;
 
-    
-    //Declare structs
-    SDL_FRect temp2 = {.w = 32, .h = 32, .x =392, .y = 200};
-    g_char.position = temp2;
-    g_char.speed = 200.0f;
-    g_char.max_health = 100;
-    g_char.health = 50;
-    g_char.health_percentage = g_char.max_health / 100*g_char.health;
-
-    
-
+    load_in_assets();
+    define_inital_variables();
     fill_tiles_array();
 
 }
+
+
 
 
 SDL_Texture* loadTexture(const char* path, SDL_Renderer* renderer) {
@@ -207,18 +215,37 @@ SDL_Texture* loadTexture(const char* path, SDL_Renderer* renderer) {
 }
 
 
-void render_tiles()
+void rendering_screen()
 {
-    for(int i = 1; i<= AMOUNTOFTILESX; i++)
-    {
-        SDL_RenderTexture(g_game.renderer, g_game.basic_tile,NULL, &g_game.tile_position_array[i-1]);
-    }
+        SDL_RenderClear(g_game.renderer);
+
+        // Draw something here...
+        SDL_RenderTexture(g_game.renderer, g_game.background,NULL, NULL);
+        SDL_RenderTexture(g_game.renderer, g_char.texture,NULL, &g_char.position);
+
+        
+        //SDL_RenderTexture(g_game.renderer, g_game.basic_tile,NULL, &g_game.tile_position);
+
+        for(int i = 0; i< AMOUNTOFTILESY*AMOUNTOFTILESX; i++)
+        {
+            SDL_RenderTexture(g_game.renderer, g_game.tile_texture_array[i], NULL, &g_game.tile_position_array[i]);
+        }
+
+        SDL_FRect healthbar_pos = {.x = 20, .y = 20 ,.w = 100, .h = 20};
+        SDL_FRect healthbar_left = {.x = 0, .y = 0 ,.w = g_char.health_percentage, .h = 20};
+        SDL_FRect healthbar_left_pos = {.x = 20, .y = 20 ,.w = g_char.health_percentage, .h = 20};
+
+        SDL_RenderTexture(g_game.renderer, g_game.healthbar_empty, NULL, &healthbar_pos);
+        SDL_RenderTexture(g_game.renderer, g_game.healthbar_filled, &healthbar_left, &healthbar_left_pos);
+
+        
+        SDL_RenderTexture(g_game.renderer, g_game.store, NULL, &g_game.store_position);
+
+        SDL_RenderPresent(g_game.renderer);
 }
 
 void fill_tiles_array()
 {
-    int randomnumber;
-    randomnumber = rand() % 2;
     for(int i = 0; i< AMOUNTOFTILESX; i++)
     {
 
@@ -248,8 +275,44 @@ void fill_tiles_array()
     } 
 }
 
-bool tile_colision(SDL_FRect *rect_1, SDL_FRect *rect_2)
+
+
+void load_in_assets()
 {
-    SDL_FRect result;
-    return SDL_GetRectIntersectionFloat(rect_1, rect_2, &result);
+    //Loading in assets
+    g_game.background =  loadTexture("assets/Background.png", g_game.renderer);
+    g_char.texture = loadTexture("assets/ship.png", g_game.renderer);
+    g_game.basic_tile = loadTexture("assets/Dirt.png", g_game.renderer);
+    g_game.gold_tile = loadTexture("assets/goldt.png", g_game.renderer);
+    g_game.redonium_tile = loadTexture("assets/Redonium.png", g_game.renderer);
+    g_game.healthbar_empty = loadTexture("assets/Healthbar.png", g_game.renderer);
+    g_game.healthbar_filled = loadTexture("assets/Healthbar_filled.png", g_game.renderer);
+    g_game.store = loadTexture("assets/House.png", g_game.renderer);
+
+
+}
+
+void define_inital_variables()
+{
+    SDL_FRect temp = {.w = 32, .h = 32, .x =392, .y = 400};
+    g_game.tile_position = temp;
+
+    
+    //Declare structs
+    SDL_FRect temp2 = {.w = 32, .h = 32, .x =392, .y = 200};
+    g_char.position = temp2;
+    g_char.speed = 200.0f;
+    g_char.max_health = 100;
+    g_char.health = 50;
+    g_char.health_percentage = g_char.max_health / 100*g_char.health; 
+
+    g_char.bag_capacity = 5;
+    for(int i = 0 ; i < sizeof(g_char.ores)/sizeof(g_char.ores[0]); i++)
+    {
+        g_char.ores[i] = 0;
+    }
+
+    SDL_FRect temp3 = {.x = 100, .y = 256 ,.w = 64, .h = 64};
+    g_game.store_position = temp3;
+
 }

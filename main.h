@@ -21,6 +21,8 @@ typedef struct Game
     SDL_Texture *redonium_tile;
     SDL_Texture *healthbar_empty;
     SDL_Texture *healthbar_filled;
+    SDL_Texture *store;
+    SDL_FRect store_position;
     
 
     SDL_FRect tile_position;
@@ -91,3 +93,10 @@ void render_tiles();
 void fill_tiles_array();
 
 bool tile_colision(SDL_FRect *rect_1, SDL_FRect *rect_2);
+
+
+void load_in_assets();
+void define_inital_variables();
+
+void rendering_screen();
+void movement_and_collision();

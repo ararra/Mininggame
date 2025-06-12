@@ -15,7 +15,7 @@ int main(int argc, char* argv[]) {
     Uint64 collision_start;
     bool collision = false;
     int tile_col_index[4];
-
+    Uint64 framecounter = 0;
     while (running) {
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_EVENT_QUIT) {
@@ -46,25 +46,76 @@ int main(int argc, char* argv[]) {
                 collision = true;
                 tile_col_index[k] = i;
                 k += 1;
-
             }
         }
 
         if(SDL_GetRectIntersectionFloat(&g_char.position, &g_game.store_position, &temp_collision_result))
         {
+            int money_sum = 0;
+            for(int i = 0; i < 8; i++)
+            {
+                money_sum += (i+1)*g_char.ores[i];
+                g_char.ores[i] = 0;
+            }
+
+            g_char.money += money_sum;
+            g_char.gas = g_char.max_gas;
+            g_char.health = g_char.max_health;
+            SDL_Log("Ores sold, you've made %d moneys", money_sum);
+        }
+        // framecounter+=1;
+        // SDL_Log("Frame: %d", framecounter);
+
+
+        // TODO: add slowdown to movement when letting go of button
+        if(keys[SDL_SCANCODE_W] && !collision &&  g_char.gas > 0) 
+        { 
+            g_char.position.y -= delta*g_char.speed; 
+        }
+        if(keys[SDL_SCANCODE_S] && !collision &&  g_char.gas > 0)
+        {
+            g_char.position.y += delta*g_char.speed; 
+        }
+        if(keys[SDL_SCANCODE_A] && !collision &&  g_char.gas > 0)
+        {
+            g_char.position.x -= delta*g_char.speed;
+        }
+        if(keys[SDL_SCANCODE_D] && !collision &&  g_char.gas > 0)
+        { 
+            g_char.position.x += delta*g_char.speed; 
+        }
+        if(keys[SDL_SCANCODE_D] || keys[SDL_SCANCODE_S] || keys[SDL_SCANCODE_A] || keys[SDL_SCANCODE_W])
+        {
+            g_char.gas -= 1;
+            SDL_Log("Current gas is %d", g_char.gas);
+        }
+
+        if(g_char.gas == 0 || g_char.health == 0)
+        {
+            SDL_FRect temp2 = {.w = 32, .h = 32, .x =392, .y = 200};
+            g_char.position = temp2;
+            g_char.gas = g_char.max_gas;
+            g_char.health = g_char.max_health;
+            
+            // TODO: make money loss dependent on amount of money.
             for(int i = 0; i < 8; i++)
             {
                 g_char.ores[i] = 0;
             }
-            SDL_Log("Ores sold");
+            if (g_char.money <=10)
+            {
+                g_char.money == 0;
+            }
+            else
+            {
+                g_char.money -= 2;
+            }
+            
+
+            SDL_Log("You died, all ores gone.");
+            // TODO: Make UI popup 
         }
-        
-        
-        // TODO: add slowdown to movement when letting go of button
-        if (keys[SDL_SCANCODE_W] & !collision){ g_char.position.y -= delta*g_char.speed; }
-        if (keys[SDL_SCANCODE_S] & !collision){ g_char.position.y += delta*g_char.speed; }
-        if (keys[SDL_SCANCODE_A] & !collision){ g_char.position.x -= delta*g_char.speed; }
-        if (keys[SDL_SCANCODE_D] & !collision){ g_char.position.x += delta*g_char.speed; }
+
 
         // TODO: Move collision into separate function.
         // TODO: Make bounceback feature initial velocity based on "pressure" (time under button press) with exponential speed loss. 
@@ -140,21 +191,25 @@ int main(int argc, char* argv[]) {
             {
                 if(g_game.tile_texture_array[tile_col_index[0]] == g_game.redonium_tile )
                 {
-                    g_char.ores[0] += 1;
+                    g_char.ores[1] += 1;
                     SDL_Log("Redtile +1");
                 }
                 if(g_game.tile_texture_array[tile_col_index[0]] == g_game.gold_tile)
                 {
-                    g_char.ores[1] += 1;
+                    g_char.ores[0] += 1;
                     SDL_Log("gold tile +1");
                 }
-            }else if(g_game.tile_texture_array[tile_col_index[0]] != g_game.basic_tile)
+            }
+            else if(g_game.tile_texture_array[tile_col_index[0]] != g_game.basic_tile)
             {
                 SDL_Log("Bag is full, Item deleted!");
             }
             
         }
 
+
+        //Render only 60 fps
+        SDL_Delay(16.67);
         rendering_screen();
     }
 
@@ -224,19 +279,29 @@ void rendering_screen()
         SDL_RenderTexture(g_game.renderer, g_char.texture,NULL, &g_char.position);
 
         
-        //SDL_RenderTexture(g_game.renderer, g_game.basic_tile,NULL, &g_game.tile_position);
-
+        // SDL_RenderTexture(g_game.renderer, g_game.basic_tile,NULL, &g_game.tile_position);
         for(int i = 0; i< AMOUNTOFTILESY*AMOUNTOFTILESX; i++)
         {
             SDL_RenderTexture(g_game.renderer, g_game.tile_texture_array[i], NULL, &g_game.tile_position_array[i]);
         }
 
+        float health_percentage = ((float)g_char.health / g_char.max_health) * 100.0f;
+
         SDL_FRect healthbar_pos = {.x = 20, .y = 20 ,.w = 100, .h = 20};
-        SDL_FRect healthbar_left = {.x = 0, .y = 0 ,.w = g_char.health_percentage, .h = 20};
-        SDL_FRect healthbar_left_pos = {.x = 20, .y = 20 ,.w = g_char.health_percentage, .h = 20};
+        SDL_FRect healthbar_left = {.x = 0, .y = 0 ,.w = health_percentage, .h = 20};
+        SDL_FRect healthbar_left_pos = {.x = 20, .y = 20 ,.w = health_percentage, .h = 20};
 
         SDL_RenderTexture(g_game.renderer, g_game.healthbar_empty, NULL, &healthbar_pos);
         SDL_RenderTexture(g_game.renderer, g_game.healthbar_filled, &healthbar_left, &healthbar_left_pos);
+
+        float gas_percentage = ((float)g_char.gas / g_char.max_gas) * 100.0f;
+
+        SDL_FRect gasbar_pos = {.x = 20, .y = 60 ,.w = 100, .h = 20};
+        SDL_FRect gasbar_left = {.x = 0, .y = 0 ,.w = gas_percentage, .h = 20};
+        SDL_FRect gasbar_left_pos = {.x = 20, .y = 60 ,.w = gas_percentage, .h = 20};
+
+        SDL_RenderTexture(g_game.renderer, g_game.gas_empty, NULL, &gasbar_pos);
+        SDL_RenderTexture(g_game.renderer, g_game.gas_filled, &gasbar_left, &gasbar_left_pos);
 
         
         SDL_RenderTexture(g_game.renderer, g_game.store, NULL, &g_game.store_position);
@@ -288,7 +353,8 @@ void load_in_assets()
     g_game.healthbar_empty = loadTexture("assets/Healthbar.png", g_game.renderer);
     g_game.healthbar_filled = loadTexture("assets/Healthbar_filled.png", g_game.renderer);
     g_game.store = loadTexture("assets/House.png", g_game.renderer);
-
+    g_game.gas_empty = loadTexture("assets/Healthbar.png", g_game.renderer);
+    g_game.gas_filled = loadTexture("assets/Gasbar.png", g_game.renderer);
 
 }
 
@@ -304,7 +370,9 @@ void define_inital_variables()
     g_char.speed = 200.0f;
     g_char.max_health = 100;
     g_char.health = 50;
-    g_char.health_percentage = g_char.max_health / 100*g_char.health; 
+    g_char.max_gas = 1000;
+    g_char.gas = 1000;
+    g_char.money = 0;
 
     g_char.bag_capacity = 5;
     for(int i = 0 ; i < sizeof(g_char.ores)/sizeof(g_char.ores[0]); i++)

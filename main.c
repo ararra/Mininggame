@@ -305,6 +305,7 @@ void rendering_screen()
 
         
         SDL_RenderTexture(g_game.renderer, g_game.store, NULL, &g_game.store_position);
+        SDL_RenderTexture(g_game.renderer, g_game.upgrade_store, NULL, &g_game.upgrade_store_position);
 
         SDL_RenderPresent(g_game.renderer);
 }
@@ -355,6 +356,7 @@ void load_in_assets()
     g_game.store = loadTexture("assets/House.png", g_game.renderer);
     g_game.gas_empty = loadTexture("assets/Healthbar.png", g_game.renderer);
     g_game.gas_filled = loadTexture("assets/Gasbar.png", g_game.renderer);
+    g_game.upgrade_store = loadTexture("assets/Upgrade House.png", g_game.renderer);
 
 }
 
@@ -382,5 +384,8 @@ void define_inital_variables()
 
     SDL_FRect temp3 = {.x = 100, .y = 256 ,.w = 64, .h = 64};
     g_game.store_position = temp3;
+
+    SDL_FRect temp4 = {.x = 500, .y = 256 ,.w = 64, .h = 64};
+    g_game.upgrade_store_position = temp4;
 
 }

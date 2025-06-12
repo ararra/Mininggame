@@ -16,5 +16,6 @@
         "sdl_main.h": "c",
         "sdl_image.h": "c",
         "stdlib.h": "c"
-    }
+    },
+    "C_Cpp.errorSquiggles": "disabled"
 }

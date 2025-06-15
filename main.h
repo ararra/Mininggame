@@ -7,6 +7,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <math.h>
+#include <SDL3_ttf/SDL_ttf.h>
 
 # define AMOUNTOFTILESX 25
 # define AMOUNTOFTILESY 10
@@ -38,6 +39,8 @@ typedef struct Game
     SDL_FRect tile_position_array[AMOUNTOFTILESY*AMOUNTOFTILESX];
     SDL_Texture *tile_texture_array[AMOUNTOFTILESY*AMOUNTOFTILESX];
 
+
+    TTF_Font* font;
 }Game;
 
 

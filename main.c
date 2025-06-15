@@ -61,7 +61,7 @@ int main(int argc, char* argv[]) {
             g_char.money += money_sum;
             g_char.gas = g_char.max_gas;
             g_char.health = g_char.max_health;
-            SDL_Log("Ores sold, you've made %d moneys", money_sum);
+            // SDL_Log("Ores sold, you've made %d moneys", money_sum);
         }
         // framecounter+=1;
         // SDL_Log("Frame: %d", framecounter);
@@ -87,7 +87,7 @@ int main(int argc, char* argv[]) {
         if(keys[SDL_SCANCODE_D] || keys[SDL_SCANCODE_S] || keys[SDL_SCANCODE_A] || keys[SDL_SCANCODE_W])
         {
             g_char.gas -= 1;
-            SDL_Log("Current gas is %d", g_char.gas);
+            // SDL_Log("Current gas is %d", g_char.gas);
         }
 
         if(g_char.gas == 0 || g_char.health == 0)
@@ -241,7 +241,11 @@ void initialize_game()
         SDL_Quit();
         exit(EXIT_FAILURE);
     }
-
+    if (TTF_Init() < 0) {
+        printf("TTF_Init error: %s\n", SDL_GetError());
+        SDL_Quit();
+        exit(EXIT_FAILURE);
+    }
 
     load_in_assets();
     define_inital_variables();
@@ -307,7 +311,25 @@ void rendering_screen()
         SDL_RenderTexture(g_game.renderer, g_game.store, NULL, &g_game.store_position);
         SDL_RenderTexture(g_game.renderer, g_game.upgrade_store, NULL, &g_game.upgrade_store_position);
 
+        SDL_Color color = {255, 255, 255, 255}; // White
+        char money_string[3] = "0";
+        SDL_itoa(g_char.money ,money_string, 10);
+        SDL_Surface* surface = TTF_RenderText_Blended(g_game.font, money_string, sizeof(money_string), color);
+        SDL_Texture* texture = SDL_CreateTextureFromSurface(g_game.renderer, surface);
+        SDL_FRect destRect = {20, 100, surface->w, surface->h};
+        SDL_DestroySurface(surface);
+        SDL_RenderTexture(g_game.renderer, texture, NULL, &destRect);
+        
+        SDL_Surface* surface_mon = TTF_RenderText_Blended(g_game.font, "money", sizeof("money"), color);
+        SDL_Texture* texture_mon = SDL_CreateTextureFromSurface(g_game.renderer, surface_mon);
+
+        SDL_FRect destRectmon = {40, 100, surface->w, surface->h};
+        SDL_DestroySurface(surface_mon);
+        SDL_RenderTexture(g_game.renderer, texture_mon, NULL, &destRectmon);
+        
         SDL_RenderPresent(g_game.renderer);
+
+        
 }
 
 void fill_tiles_array()
@@ -319,6 +341,7 @@ void fill_tiles_array()
         {
             //modulo x makes it remove around 1 in x random tiles.
             int fill_tile_basic = rand();
+            SDL_Log("ss %d", fill_tile_basic);
             int k = i+j*AMOUNTOFTILESX;
             g_game.tile_position_array[k].y = 640-j*32-32;
             g_game.tile_position_array[k].x = i*32;
@@ -357,6 +380,12 @@ void load_in_assets()
     g_game.gas_empty = loadTexture("assets/Healthbar.png", g_game.renderer);
     g_game.gas_filled = loadTexture("assets/Gasbar.png", g_game.renderer);
     g_game.upgrade_store = loadTexture("assets/Upgrade House.png", g_game.renderer);
+
+    g_game.font = TTF_OpenFont("assets/Roboto/Roboto-VariableFont_wdth,wght.ttf", 24);
+    if (!g_game.font) {
+        printf("Failed to load font: %s\n", SDL_GetError());
+        return exit(EXIT_FAILURE);
+    }
 
 }
 

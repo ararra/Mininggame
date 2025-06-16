@@ -112,3 +112,10 @@ void define_inital_variables();
 
 void rendering_screen();
 void movement_and_collision();
+
+// New function declarations for collision and movement
+void handle_collision_detection(bool *collision, Uint64 *collision_start, Uint64 now, int tile_col_index[4], SDL_FRect collision_result_array[4], int *k);
+void handle_movement(const bool *keys, bool collision, float delta);
+void handle_collision_response(const bool *keys, bool *collision, int tile_col_index[4], SDL_FRect collision_result_array[4], int k, Uint64 collision_start, Uint64 now);
+void handle_death_reset();
+void handle_store_interaction();

@@ -15,7 +15,6 @@ int main(int argc, char* argv[]) {
     Uint64 collision_start;
     bool collision = false;
     int tile_col_index[4];
-    Uint64 framecounter = 0;
     while (running) {
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_EVENT_QUIT) {
@@ -28,185 +27,19 @@ int main(int argc, char* argv[]) {
 
         const bool *keys = SDL_GetKeyboardState(NULL);
         
-        SDL_FRect temp_collision_result;
         SDL_FRect collision_result_array[4];
         int k = 0;
-        for(int i = 0; i < AMOUNTOFTILESX*AMOUNTOFTILESY; i++)
-        {
-            if (SDL_GetRectIntersectionFloat(&g_char.position, &g_game.tile_position_array[i], &temp_collision_result))
-            {
-                collision_result_array[k] = temp_collision_result;
-                // SDL_Log("coll %d ", k);
+        handle_collision_detection(&collision, &collision_start, now, tile_col_index, collision_result_array, &k);
 
-                if(!collision)
-                {
-                    collision_start = now;
-                }
-                
-                collision = true;
-                tile_col_index[k] = i;
-                k += 1;
-            }
+        handle_store_interaction();
+
+        handle_movement(keys, collision, delta);
+
+        if(g_char.gas == 0 || g_char.health == 0) {
+            handle_death_reset();
         }
 
-        if(SDL_GetRectIntersectionFloat(&g_char.position, &g_game.store_position, &temp_collision_result))
-        {
-            int money_sum = 0;
-            for(int i = 0; i < 8; i++)
-            {
-                money_sum += (i+1)*g_char.ores[i];
-                g_char.ores[i] = 0;
-            }
-
-            g_char.money += money_sum;
-            g_char.gas = g_char.max_gas;
-            g_char.health = g_char.max_health;
-            // SDL_Log("Ores sold, you've made %d moneys", money_sum);
-        }
-        // framecounter+=1;
-        // SDL_Log("Frame: %d", framecounter);
-
-
-        // TODO: add slowdown to movement when letting go of button
-        if(keys[SDL_SCANCODE_W] && !collision &&  g_char.gas > 0) 
-        { 
-            g_char.position.y -= delta*g_char.speed; 
-        }
-        if(keys[SDL_SCANCODE_S] && !collision &&  g_char.gas > 0)
-        {
-            g_char.position.y += delta*g_char.speed; 
-        }
-        if(keys[SDL_SCANCODE_A] && !collision &&  g_char.gas > 0)
-        {
-            g_char.position.x -= delta*g_char.speed;
-        }
-        if(keys[SDL_SCANCODE_D] && !collision &&  g_char.gas > 0)
-        { 
-            g_char.position.x += delta*g_char.speed; 
-        }
-        if(keys[SDL_SCANCODE_D] || keys[SDL_SCANCODE_S] || keys[SDL_SCANCODE_A] || keys[SDL_SCANCODE_W])
-        {
-            g_char.gas -= 1;
-            // SDL_Log("Current gas is %d", g_char.gas);
-        }
-
-        if(g_char.gas == 0 || g_char.health == 0)
-        {
-            SDL_FRect temp2 = {.w = 32, .h = 32, .x =392, .y = 200};
-            g_char.position = temp2;
-            g_char.gas = g_char.max_gas;
-            g_char.health = g_char.max_health;
-            
-            // TODO: make money loss dependent on amount of money.
-            for(int i = 0; i < 8; i++)
-            {
-                g_char.ores[i] = 0;
-            }
-            if (g_char.money <=10)
-            {
-                g_char.money == 0;
-            }
-            else
-            {
-                g_char.money -= 2;
-            }
-            
-
-            SDL_Log("You died, all ores gone.");
-            // TODO: Make UI popup 
-        }
-
-
-        // TODO: Move collision into separate function.
-        // TODO: Make bounceback feature initial velocity based on "pressure" (time under button press) with exponential speed loss. 
-        //Needs to be done between frames right so a function with static variable right?
-
-        int char_middle_x = g_char.position.x + g_char.position.w/2;
-        int char_middle_y = g_char.position.y + g_char.position.h/2; 
-        if (collision && (!(keys[SDL_SCANCODE_S] || (keys[SDL_SCANCODE_A] ^ keys[SDL_SCANCODE_D])))  )
-        {  
-            // vector method
-            // vector from center of char to center of colision
-            int coll_middle_x = 0;
-            int coll_middle_y = 0;
-
-            // Calculate center of all collisions
-            for(int i = 0; i < k; i++)
-            {
-                coll_middle_x += collision_result_array[i].x + collision_result_array[i].w/2;
-                coll_middle_y += collision_result_array[i].y + collision_result_array[i].h/2;
-            }
-
-            // Get average center
-            if (k > 0) {
-                coll_middle_x /= k;
-                coll_middle_y /= k;
-                
-                // Calculate push-back vector
-                int v_x = char_middle_x - coll_middle_x;
-                int v_y = char_middle_y - coll_middle_y;
-                
-                // SDL_Log("v_x position %d", v_x );
-                // Apply push-back (with safety checks)
-                if (v_x != 0) {
-                    g_char.position.x += (v_x > 0) ? 2 : -2;
-                }
-                if (v_y != 0) {
-                    g_char.position.y += (v_y > 0) ? 2 : -2;
-                }
-            }
-
-            collision = false;
-
-        } 
-        // TODO:  remove tile with most overlap and center character into the drilled tile smoothly.
-        // remove tile on "presure collision" !!!!consider the order of these if checks might be important. Do I put in functions?
-        if (now - collision_start >= 500 & collision)
-        {   
-            // Attempt at removing the closest collision.
-            // int min_ind = 0;
-            // int min = abs((char_middle_x - collision_result_array[0].x + collision_result_array[0].w/2)+ (char_middle_x - collision_result_array[0].x + collision_result_array[0].w/2));
-            // for(int i = 1; i<k; i++)
-            // {
-            //     int temp_x = abs(char_middle_x - collision_result_array[i].x + collision_result_array[i].w/2);
-            //     int temp_y = abs(char_middle_x - collision_result_array[i].x + collision_result_array[i].w/2);
-            //     if(abs(temp_x + temp_y) < min)
-            //     {
-            //         min = abs(temp_x + temp_y);
-            //         min_ind = tile_col_index[i];
-            //     }
-            // }
-
-
-            SDL_FRect temp = {.x = -100, .y = -100, .w =0, .h = 0}; //hide offscreen
-            g_game.tile_position_array[tile_col_index[0]] = temp;
-            collision = false;
-
-            int total_ores = 0;
-            for(int i = 0; i < 8; i++)
-            {
-                total_ores += g_char.ores[i];
-            }
-            if(total_ores < g_char.bag_capacity)
-            {
-                if(g_game.tile_texture_array[tile_col_index[0]] == g_game.redonium_tile )
-                {
-                    g_char.ores[1] += 1;
-                    SDL_Log("Redtile +1");
-                }
-                if(g_game.tile_texture_array[tile_col_index[0]] == g_game.gold_tile)
-                {
-                    g_char.ores[0] += 1;
-                    SDL_Log("gold tile +1");
-                }
-            }
-            else if(g_game.tile_texture_array[tile_col_index[0]] != g_game.basic_tile)
-            {
-                SDL_Log("Bag is full, Item deleted!");
-            }
-            
-        }
-
+        handle_collision_response(keys, &collision, tile_col_index, collision_result_array, k, collision_start, now);
 
         //Render only 60 fps
         SDL_Delay(16.67);
@@ -323,9 +156,9 @@ void rendering_screen()
         SDL_Surface* surface_mon = TTF_RenderText_Blended(g_game.font, "money", sizeof("money"), color);
         SDL_Texture* texture_mon = SDL_CreateTextureFromSurface(g_game.renderer, surface_mon);
 
-        SDL_FRect destRectmon = {40, 100, surface->w, surface->h};
+        SDL_FRect dest_rect_mon = {40, 100, surface->w, surface->h};
         SDL_DestroySurface(surface_mon);
-        SDL_RenderTexture(g_game.renderer, texture_mon, NULL, &destRectmon);
+        SDL_RenderTexture(g_game.renderer, texture_mon, NULL, &dest_rect_mon);
         
         SDL_RenderPresent(g_game.renderer);
 
@@ -417,4 +250,151 @@ void define_inital_variables()
     SDL_FRect temp4 = {.x = 500, .y = 256 ,.w = 64, .h = 64};
     g_game.upgrade_store_position = temp4;
 
+}
+
+void handle_collision_detection(bool *collision, Uint64 *collision_start, Uint64 now, int tile_col_index[4], SDL_FRect collision_result_array[4], int *k) {
+    SDL_FRect temp_collision_result;
+    *k = 0;
+    
+    for(int i = 0; i < AMOUNTOFTILESX*AMOUNTOFTILESY; i++) {
+        if (SDL_GetRectIntersectionFloat(&g_char.position, &g_game.tile_position_array[i], &temp_collision_result)) {
+            collision_result_array[*k] = temp_collision_result;
+            
+            if(!*collision) {
+                *collision_start = now;
+            }
+            
+            *collision = true;
+            tile_col_index[*k] = i;
+            *k += 1;
+        }
+    }
+}
+
+void handle_store_interaction() {
+    SDL_FRect temp_collision_result;
+    
+    if(SDL_GetRectIntersectionFloat(&g_char.position, &g_game.store_position, &temp_collision_result)) {
+        int money_sum = 0;
+        for(int i = 0; i < 8; i++) {
+            money_sum += (i+1)*g_char.ores[i];
+            g_char.ores[i] = 0;
+        }
+
+        g_char.money += money_sum;
+        g_char.gas = g_char.max_gas;
+        g_char.health = g_char.max_health;
+    }
+        // TODO: Add upgrade store interaction
+        if(SDL_GetRectIntersectionFloat(&g_char.position, &g_game.upgrade_store_position, &temp_collision_result)) {
+        int money_sum = 0;
+        for(int i = 0; i < 8; i++) {
+            money_sum += (i+1)*g_char.ores[i];
+            g_char.ores[i] = 0;
+        }
+
+        g_char.money += money_sum;
+        g_char.gas = g_char.max_gas;
+        g_char.health = g_char.max_health;
+    }
+}
+
+void handle_movement(const bool *keys, bool collision, float delta) {
+    if(keys[SDL_SCANCODE_W] && !collision && g_char.gas > 0) { 
+        g_char.position.y -= delta*g_char.speed; 
+    }
+    if(keys[SDL_SCANCODE_S] && !collision && g_char.gas > 0) {
+        g_char.position.y += delta*g_char.speed; 
+    }
+    if(keys[SDL_SCANCODE_A] && !collision && g_char.gas > 0) {
+        g_char.position.x -= delta*g_char.speed;
+    }
+    if(keys[SDL_SCANCODE_D] && !collision && g_char.gas > 0) { 
+        g_char.position.x += delta*g_char.speed; 
+    }
+    if(keys[SDL_SCANCODE_D] || keys[SDL_SCANCODE_S] || keys[SDL_SCANCODE_A] || keys[SDL_SCANCODE_W]) {
+        g_char.gas -= 1;
+    }
+}
+
+void handle_death_reset() {
+    SDL_FRect temp2 = {.w = 32, .h = 32, .x = 392, .y = 200};
+    g_char.position = temp2;
+    g_char.gas = g_char.max_gas;
+    g_char.health = g_char.max_health;
+    
+    for(int i = 0; i < 8; i++) {
+        g_char.ores[i] = 0;
+    }
+    
+    if (g_char.money <= 10) {
+        g_char.money -= 2;
+    } else {
+        g_char.money -= 4;
+    }
+    
+    SDL_Log("You died, all ores gone.");
+}
+
+void handle_collision_response(const bool *keys, bool *collision, int tile_col_index[4], SDL_FRect collision_result_array[4], int k, Uint64 collision_start, Uint64 now) {
+    int char_middle_x = g_char.position.x + g_char.position.w/2;
+    int char_middle_y = g_char.position.y + g_char.position.h/2; 
+    
+    // Handle bounceback when not pressing movement keys
+    if(*collision && (!(keys[SDL_SCANCODE_S] || (keys[SDL_SCANCODE_A] ^ keys[SDL_SCANCODE_D])))) {  
+        int coll_middle_x = 0;
+        int coll_middle_y = 0;
+
+        // Calculate center of all collisions
+        for(int i = 0; i < k; i++) {
+            coll_middle_x += collision_result_array[i].x + collision_result_array[i].w/2;
+            coll_middle_y += collision_result_array[i].y + collision_result_array[i].h/2;
+        }
+
+        // Get average center
+        if(k > 0) {
+            coll_middle_x /= k;
+            coll_middle_y /= k;
+            
+            // Calculate push-back vector
+            int v_x = char_middle_x - coll_middle_x;
+            int v_y = char_middle_y - coll_middle_y;
+            
+            // Apply push-back (with safety checks)
+            if (v_x != 0) {
+                g_char.position.x += (v_x > 0) ? 2 : -2;
+            }
+            if (v_y != 0) {
+                g_char.position.y += (v_y > 0) ? 2 : -2;
+            }
+        }
+        
+        *collision = false;
+    } 
+    
+    // Handle tile removal on "pressure collision"
+    if(now - collision_start >= 500 && *collision) {   
+        SDL_FRect temp = {.x = -100, .y = -100, .w = 0, .h = 0}; //hide offscreen
+        g_game.tile_position_array[tile_col_index[0]] = temp;
+
+        int total_ores = 0;
+        for(int i = 0; i < 8; i++) {
+            total_ores += g_char.ores[i];
+        }
+        
+        if(total_ores < g_char.bag_capacity) {
+            if(g_game.tile_texture_array[tile_col_index[0]] == g_game.redonium_tile) {
+                g_char.ores[1] += 1;
+                SDL_Log("Redtile +1");
+            }
+            if(g_game.tile_texture_array[tile_col_index[0]] == g_game.gold_tile) {
+                g_char.ores[0] += 1;
+                SDL_Log("gold tile +1");
+            }
+        } else if(g_game.tile_texture_array[tile_col_index[0]] != g_game.basic_tile) {
+            SDL_Log("Bag is full, Item deleted!");
+        }
+        
+        *collision = false;
+    }
 }

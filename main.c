@@ -144,23 +144,39 @@ void rendering_screen()
         SDL_RenderTexture(g_game.renderer, g_game.store, NULL, &g_game.store_position);
         SDL_RenderTexture(g_game.renderer, g_game.upgrade_store, NULL, &g_game.upgrade_store_position);
 
-        SDL_Color color = {255, 255, 255, 255}; // White
+        SDL_Color white_color = {255, 255, 255, 255}; // White
+
         char money_string[3] = "0";
         SDL_itoa(g_char.money ,money_string, 10);
-        SDL_Surface* surface = TTF_RenderText_Blended(g_game.font, money_string, sizeof(money_string), color);
+
+        SDL_Surface* surface = TTF_RenderText_Blended(g_game.font, money_string, sizeof(money_string), white_color);
         SDL_Texture* texture = SDL_CreateTextureFromSurface(g_game.renderer, surface);
+
         SDL_FRect destRect = {20, 100, surface->w, surface->h};
         SDL_DestroySurface(surface);
         SDL_RenderTexture(g_game.renderer, texture, NULL, &destRect);
         
-        SDL_Surface* surface_mon = TTF_RenderText_Blended(g_game.font, "money", sizeof("money"), color);
+        SDL_Surface* surface_mon = TTF_RenderText_Blended(g_game.font, "money", sizeof("money"), white_color);
         SDL_Texture* texture_mon = SDL_CreateTextureFromSurface(g_game.renderer, surface_mon);
 
-        SDL_FRect dest_rect_mon = {40, 100, surface->w, surface->h};
+        SDL_FRect dest_rect_mon = {50, 100, surface->w, surface->h};
         SDL_DestroySurface(surface_mon);
         SDL_RenderTexture(g_game.renderer, texture_mon, NULL, &dest_rect_mon);
-        
+
+
+        for (int i = 0; i < sizeof(g_char.ores)/sizeof(g_char.ores[0]); i++)
+        {
+            char string[3] = "0";
+            SDL_itoa(g_char.ores[i], string, 10);
+            SDL_Surface* surface = TTF_RenderText_Blended(g_game.font, string, sizeof(string), white_color);
+            SDL_Texture* texture = SDL_CreateTextureFromSurface(g_game.renderer, surface);
+            
+            SDL_FRect dest_rect = {150+i*30, 15, surface->w, surface->h};
+            SDL_DestroySurface(surface);
+            SDL_RenderTexture(g_game.renderer, texture, NULL, &dest_rect);
+        }
         SDL_RenderPresent(g_game.renderer);
+
 
         
 }
@@ -286,16 +302,29 @@ void handle_store_interaction() {
         g_char.health = g_char.max_health;
     }
         // TODO: Add upgrade store interaction
-        if(SDL_GetRectIntersectionFloat(&g_char.position, &g_game.upgrade_store_position, &temp_collision_result)) {
-        int money_sum = 0;
-        for(int i = 0; i < 8; i++) {
-            money_sum += (i+1)*g_char.ores[i];
-            g_char.ores[i] = 0;
-        }
+    if(SDL_GetRectIntersectionFloat(&g_char.position, &g_game.upgrade_store_position, &temp_collision_result)) {
 
-        g_char.money += money_sum;
-        g_char.gas = g_char.max_gas;
-        g_char.health = g_char.max_health;
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "can't upgrade yet", "lol", g_game.window);
+        // Get average center
+
+
+        int char_middle_x = g_char.position.x + g_char.position.w/2;
+        int char_middle_y = g_char.position.y + g_char.position.h/2; 
+
+        int upg_store_middle_x = g_game.upgrade_store_position.x + g_game.upgrade_store_position.w/2;
+        int upg_store_middle_y = g_game.upgrade_store_position.y + g_game.upgrade_store_position.h/2;
+
+        int v_x = char_middle_x - upg_store_middle_x;
+        int v_y = char_middle_y - upg_store_middle_y;
+        
+        // Apply push-back (with safety checks)
+        if (v_x != 0) {
+            g_char.position.x += (v_x > 0) ? 2 : -2;
+        }
+        if (v_y != 0) {
+            g_char.position.y += (v_y > 0) ? 2 : -2;
+        }
+    
     }
 }
 

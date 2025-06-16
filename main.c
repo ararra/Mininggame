@@ -45,10 +45,8 @@ int main(int argc, char* argv[]) {
         SDL_Delay(16.67);
         rendering_screen();
     }
-
-    SDL_DestroyRenderer(g_game.renderer);
-    SDL_DestroyWindow(g_game.window);
-    SDL_Quit();
+    
+    shutdown();
 
     return 0;
 }
@@ -185,7 +183,6 @@ void fill_tiles_array()
 {
     for(int i = 0; i< AMOUNTOFTILESX; i++)
     {
-
         for(int j = 0; j < AMOUNTOFTILESY; j++)
         {
             //modulo x makes it remove around 1 in x random tiles.
@@ -242,7 +239,6 @@ void define_inital_variables()
 {
     SDL_FRect temp = {.w = 32, .h = 32, .x =392, .y = 400};
     g_game.tile_position = temp;
-
     
     //Declare structs
     SDL_FRect temp2 = {.w = 32, .h = 32, .x =392, .y = 200};
@@ -304,7 +300,6 @@ void handle_store_interaction() {
         // TODO: Add upgrade store interaction
     if(SDL_GetRectIntersectionFloat(&g_char.position, &g_game.upgrade_store_position, &temp_collision_result)) {
 
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "can't upgrade yet", "lol", g_game.window);
         // Get average center
 
 
@@ -356,9 +351,9 @@ void handle_death_reset() {
         g_char.ores[i] = 0;
     }
     
-    if (g_char.money <= 10) {
+    if (g_char.money <= 10 && g_char.money > 1) {
         g_char.money -= 2;
-    } else {
+    } else if(g_char.money > 10){
         g_char.money -= 4;
     }
     
@@ -426,4 +421,28 @@ void handle_collision_response(const bool *keys, bool *collision, int tile_col_i
         
         *collision = false;
     }
+}
+
+void shutdown()
+{
+    SDL_DestroyTexture(g_game.background);
+    SDL_DestroyTexture(g_game.basic_tile);
+    SDL_DestroyTexture(g_game.gold_tile);
+    SDL_DestroyTexture(g_game.redonium_tile);
+    SDL_DestroyTexture(g_game.healthbar_empty);
+    SDL_DestroyTexture(g_game.healthbar_filled);
+    SDL_DestroyTexture(g_game.store);
+    SDL_DestroyTexture(g_game.upgrade_store);
+    SDL_DestroyTexture(g_game.gas_empty);
+    SDL_DestroyTexture(g_game.gas_filled);
+    TTF_CloseFont(g_game.font);
+    
+    SDL_DestroyTexture(g_char.texture);
+
+
+
+
+    SDL_DestroyRenderer(g_game.renderer);
+    SDL_DestroyWindow(g_game.window);
+    SDL_Quit();
 }

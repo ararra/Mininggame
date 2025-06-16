@@ -119,3 +119,5 @@ void handle_movement(const bool *keys, bool collision, float delta);
 void handle_collision_response(const bool *keys, bool *collision, int tile_col_index[4], SDL_FRect collision_result_array[4], int k, Uint64 collision_start, Uint64 now);
 void handle_death_reset();
 void handle_store_interaction();
+
+void shutdown();
